@@ -241,73 +241,81 @@ ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "stripe_customer_id" text;
 ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "stripe_subscription_id" text;
 ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "stripe_current_period_end" timestamp;
 
--- ─── Foreign Keys (idempotent via DO blocks) ──────────────────────────────────
+-- ─── Foreign Keys ─────────────────────────────────────────────────────────────
+-- WHEN OTHERS catches both duplicate_object (42710) and undefined_column (42703)
+-- so partial DB state from any prior run can never block this script.
 
 DO $$ BEGIN ALTER TABLE "workspace_members" ADD CONSTRAINT "workspace_members_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "workspaces"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "broker_accounts" ADD CONSTRAINT "broker_accounts_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "workspaces"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "positions" ADD CONSTRAINT "positions_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "workspaces"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "positions" ADD CONSTRAINT "positions_broker_account_id_broker_accounts_id_fk" FOREIGN KEY ("broker_account_id") REFERENCES "broker_accounts"("id") ON DELETE SET NULL;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "position_legs" ADD CONSTRAINT "position_legs_position_id_positions_id_fk" FOREIGN KEY ("position_id") REFERENCES "positions"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "position_adjustments" ADD CONSTRAINT "position_adjustments_position_id_positions_id_fk" FOREIGN KEY ("position_id") REFERENCES "positions"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "tags" ADD CONSTRAINT "tags_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "workspaces"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "position_tags" ADD CONSTRAINT "position_tags_position_id_positions_id_fk" FOREIGN KEY ("position_id") REFERENCES "positions"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "position_tags" ADD CONSTRAINT "position_tags_tag_id_tags_id_fk" FOREIGN KEY ("tag_id") REFERENCES "tags"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "checklist_templates" ADD CONSTRAINT "checklist_templates_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "workspaces"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "checklist_items" ADD CONSTRAINT "checklist_items_template_id_checklist_templates_id_fk" FOREIGN KEY ("template_id") REFERENCES "checklist_templates"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "checklist_responses" ADD CONSTRAINT "checklist_responses_position_id_positions_id_fk" FOREIGN KEY ("position_id") REFERENCES "positions"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "checklist_responses" ADD CONSTRAINT "checklist_responses_item_id_checklist_items_id_fk" FOREIGN KEY ("item_id") REFERENCES "checklist_items"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "mistakes" ADD CONSTRAINT "mistakes_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "workspaces"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "trade_reviews" ADD CONSTRAINT "trade_reviews_position_id_positions_id_fk" FOREIGN KEY ("position_id") REFERENCES "positions"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "trade_reviews" ADD CONSTRAINT "trade_reviews_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "workspaces"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "review_mistakes" ADD CONSTRAINT "review_mistakes_review_id_trade_reviews_id_fk" FOREIGN KEY ("review_id") REFERENCES "trade_reviews"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "review_mistakes" ADD CONSTRAINT "review_mistakes_mistake_id_mistakes_id_fk" FOREIGN KEY ("mistake_id") REFERENCES "mistakes"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "weekly_reviews" ADD CONSTRAINT "weekly_reviews_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "workspaces"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "flow_filters" ADD CONSTRAINT "flow_filters_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "workspaces"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "ai_artifacts" ADD CONSTRAINT "ai_artifacts_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "workspaces"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN ALTER TABLE "import_batches" ADD CONSTRAINT "import_batches_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "workspaces"("id") ON DELETE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+-- ─── Verify FK coverage after run (optional — paste in a separate query) ──────
+-- SELECT tc.table_name, tc.constraint_name
+-- FROM information_schema.table_constraints tc
+-- WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.constraint_schema = 'public'
+-- ORDER BY 1;
 
 -- ─── Indexes ──────────────────────────────────────────────────────────────────
 

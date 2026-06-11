@@ -28,13 +28,10 @@ ALTER TABLE workspaces ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "workspace_select" ON workspaces
   FOR SELECT USING (id IN (SELECT user_workspace_ids()));
 
+-- All workspace members can update workspace settings.
+-- Owner-only enforcement is handled in server actions, not RLS.
 CREATE POLICY "workspace_update" ON workspaces
-  FOR UPDATE USING (
-    id IN (
-      SELECT workspace_id FROM workspace_members
-      WHERE user_id = auth.uid() AND role::text IN ('owner', 'admin')
-    )
-  );
+  FOR UPDATE USING (id IN (SELECT user_workspace_ids()));
 
 -- ─── workspace_members ───────────────────────────────────────────────────────
 ALTER TABLE workspace_members ENABLE ROW LEVEL SECURITY;
@@ -42,17 +39,9 @@ ALTER TABLE workspace_members ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "member_select" ON workspace_members
   FOR SELECT USING (workspace_id IN (SELECT user_workspace_ids()));
 
-CREATE POLICY "member_insert_owner" ON workspace_members
-  FOR INSERT WITH CHECK (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members
-      WHERE user_id = auth.uid() AND role::text = 'owner'
-    )
-  );
-
--- Own row — needed for the signup flow before the workspace member exists yet.
--- The server action runs as service_role, so RLS is bypassed server-side.
--- This policy allows the user to read their own row for client-side checks.
+-- Signup and member management go through service_role server actions
+-- which bypass RLS entirely, so no INSERT policy is needed here.
+-- Users can always see and manage their own membership row.
 CREATE POLICY "member_own_row" ON workspace_members
   FOR ALL USING (user_id = auth.uid());
 

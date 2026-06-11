@@ -225,21 +225,171 @@ CREATE TABLE IF NOT EXISTS "import_batches" (
   "committed_at" timestamp
 );
 
--- ─── Column patches (safe to re-run if table existed from a partial state) ───
--- Adds any columns that may be missing when CREATE TABLE IF NOT EXISTS skipped.
+-- ─── Column patches ───────────────────────────────────────────────────────────
+-- Every non-PK column for every table, in case CREATE TABLE IF NOT EXISTS
+-- skipped a table that exists from a prior partial run without all columns.
+-- ADD COLUMN IF NOT EXISTS is a no-op when the column already exists.
 
+-- workspaces
+ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "name" varchar(100);
+ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "plan" text;
+ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "stripe_customer_id" text;
+ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "stripe_subscription_id" text;
+ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "stripe_current_period_end" timestamp;
+ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "created_at" timestamp;
+ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "updated_at" timestamp;
+
+-- workspace_members
+ALTER TABLE "workspace_members" ADD COLUMN IF NOT EXISTS "workspace_id" uuid;
+ALTER TABLE "workspace_members" ADD COLUMN IF NOT EXISTS "user_id" uuid;
+ALTER TABLE "workspace_members" ADD COLUMN IF NOT EXISTS "role" text;
+ALTER TABLE "workspace_members" ADD COLUMN IF NOT EXISTS "joined_at" timestamp;
+
+-- broker_accounts
+ALTER TABLE "broker_accounts" ADD COLUMN IF NOT EXISTS "workspace_id" uuid;
+ALTER TABLE "broker_accounts" ADD COLUMN IF NOT EXISTS "user_id" uuid;
+ALTER TABLE "broker_accounts" ADD COLUMN IF NOT EXISTS "broker" varchar(50);
+ALTER TABLE "broker_accounts" ADD COLUMN IF NOT EXISTS "label" varchar(100);
+ALTER TABLE "broker_accounts" ADD COLUMN IF NOT EXISTS "created_at" timestamp;
+
+-- positions
+ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "workspace_id" uuid;
+ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "user_id" uuid;
 ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "broker_account_id" uuid;
+ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "symbol" varchar(10);
+ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "strategy_name" varchar(100);
+ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "status" text;
 ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "entry_thesis" text;
 ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "checklist_score" integer;
 ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "entry_credit" numeric(10, 4);
 ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "realized_pnl" numeric(10, 2);
 ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "return_on_risk" numeric(8, 4);
+ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "opened_at" timestamp;
 ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "closed_at" timestamp;
+ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "created_at" timestamp;
+ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "updated_at" timestamp;
+
+-- position_legs
+ALTER TABLE "position_legs" ADD COLUMN IF NOT EXISTS "position_id" uuid;
+ALTER TABLE "position_legs" ADD COLUMN IF NOT EXISTS "type" text;
+ALTER TABLE "position_legs" ADD COLUMN IF NOT EXISTS "side" text;
+ALTER TABLE "position_legs" ADD COLUMN IF NOT EXISTS "strike" numeric(10, 2);
+ALTER TABLE "position_legs" ADD COLUMN IF NOT EXISTS "expiration" timestamp;
+ALTER TABLE "position_legs" ADD COLUMN IF NOT EXISTS "qty" integer;
+ALTER TABLE "position_legs" ADD COLUMN IF NOT EXISTS "open_price" numeric(10, 4);
 ALTER TABLE "position_legs" ADD COLUMN IF NOT EXISTS "close_price" numeric(10, 4);
 ALTER TABLE "position_legs" ADD COLUMN IF NOT EXISTS "closed_at" timestamp;
-ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "stripe_customer_id" text;
-ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "stripe_subscription_id" text;
-ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "stripe_current_period_end" timestamp;
+ALTER TABLE "position_legs" ADD COLUMN IF NOT EXISTS "created_at" timestamp;
+
+-- position_adjustments
+ALTER TABLE "position_adjustments" ADD COLUMN IF NOT EXISTS "position_id" uuid;
+ALTER TABLE "position_adjustments" ADD COLUMN IF NOT EXISTS "kind" text;
+ALTER TABLE "position_adjustments" ADD COLUMN IF NOT EXISTS "premium_impact" numeric(10, 4);
+ALTER TABLE "position_adjustments" ADD COLUMN IF NOT EXISTS "note" text;
+ALTER TABLE "position_adjustments" ADD COLUMN IF NOT EXISTS "created_at" timestamp;
+
+-- tags
+ALTER TABLE "tags" ADD COLUMN IF NOT EXISTS "workspace_id" uuid;
+ALTER TABLE "tags" ADD COLUMN IF NOT EXISTS "name" varchar(50);
+ALTER TABLE "tags" ADD COLUMN IF NOT EXISTS "created_at" timestamp;
+
+-- position_tags
+ALTER TABLE "position_tags" ADD COLUMN IF NOT EXISTS "position_id" uuid;
+ALTER TABLE "position_tags" ADD COLUMN IF NOT EXISTS "tag_id" uuid;
+
+-- checklist_templates
+ALTER TABLE "checklist_templates" ADD COLUMN IF NOT EXISTS "workspace_id" uuid;
+ALTER TABLE "checklist_templates" ADD COLUMN IF NOT EXISTS "name" varchar(100);
+ALTER TABLE "checklist_templates" ADD COLUMN IF NOT EXISTS "is_default" boolean;
+ALTER TABLE "checklist_templates" ADD COLUMN IF NOT EXISTS "created_at" timestamp;
+ALTER TABLE "checklist_templates" ADD COLUMN IF NOT EXISTS "updated_at" timestamp;
+
+-- checklist_items
+ALTER TABLE "checklist_items" ADD COLUMN IF NOT EXISTS "template_id" uuid;
+ALTER TABLE "checklist_items" ADD COLUMN IF NOT EXISTS "label" varchar(200);
+ALTER TABLE "checklist_items" ADD COLUMN IF NOT EXISTS "required" boolean;
+ALTER TABLE "checklist_items" ADD COLUMN IF NOT EXISTS "sort_order" integer;
+
+-- checklist_responses
+ALTER TABLE "checklist_responses" ADD COLUMN IF NOT EXISTS "position_id" uuid;
+ALTER TABLE "checklist_responses" ADD COLUMN IF NOT EXISTS "item_id" uuid;
+ALTER TABLE "checklist_responses" ADD COLUMN IF NOT EXISTS "checked" boolean;
+ALTER TABLE "checklist_responses" ADD COLUMN IF NOT EXISTS "submitted_at" timestamp;
+
+-- mistakes
+ALTER TABLE "mistakes" ADD COLUMN IF NOT EXISTS "workspace_id" uuid;
+ALTER TABLE "mistakes" ADD COLUMN IF NOT EXISTS "label" varchar(100);
+ALTER TABLE "mistakes" ADD COLUMN IF NOT EXISTS "created_at" timestamp;
+
+-- trade_reviews
+ALTER TABLE "trade_reviews" ADD COLUMN IF NOT EXISTS "position_id" uuid;
+ALTER TABLE "trade_reviews" ADD COLUMN IF NOT EXISTS "workspace_id" uuid;
+ALTER TABLE "trade_reviews" ADD COLUMN IF NOT EXISTS "user_id" uuid;
+ALTER TABLE "trade_reviews" ADD COLUMN IF NOT EXISTS "thesis_accuracy" integer;
+ALTER TABLE "trade_reviews" ADD COLUMN IF NOT EXISTS "entry_quality" integer;
+ALTER TABLE "trade_reviews" ADD COLUMN IF NOT EXISTS "exit_quality" integer;
+ALTER TABLE "trade_reviews" ADD COLUMN IF NOT EXISTS "position_sizing" integer;
+ALTER TABLE "trade_reviews" ADD COLUMN IF NOT EXISTS "lesson_learned" text;
+ALTER TABLE "trade_reviews" ADD COLUMN IF NOT EXISTS "reviewed_at" timestamp;
+ALTER TABLE "trade_reviews" ADD COLUMN IF NOT EXISTS "updated_at" timestamp;
+
+-- review_mistakes
+ALTER TABLE "review_mistakes" ADD COLUMN IF NOT EXISTS "review_id" uuid;
+ALTER TABLE "review_mistakes" ADD COLUMN IF NOT EXISTS "mistake_id" uuid;
+
+-- weekly_reviews
+ALTER TABLE "weekly_reviews" ADD COLUMN IF NOT EXISTS "workspace_id" uuid;
+ALTER TABLE "weekly_reviews" ADD COLUMN IF NOT EXISTS "user_id" uuid;
+ALTER TABLE "weekly_reviews" ADD COLUMN IF NOT EXISTS "week_key" varchar(10);
+ALTER TABLE "weekly_reviews" ADD COLUMN IF NOT EXISTS "week_start" timestamp;
+ALTER TABLE "weekly_reviews" ADD COLUMN IF NOT EXISTS "week_pnl" numeric(10, 2);
+ALTER TABLE "weekly_reviews" ADD COLUMN IF NOT EXISTS "trades_closed" integer;
+ALTER TABLE "weekly_reviews" ADD COLUMN IF NOT EXISTS "adherence_pct" integer;
+ALTER TABLE "weekly_reviews" ADD COLUMN IF NOT EXISTS "what_went_well" text;
+ALTER TABLE "weekly_reviews" ADD COLUMN IF NOT EXISTS "process_slips" text;
+ALTER TABLE "weekly_reviews" ADD COLUMN IF NOT EXISTS "one_change" text;
+ALTER TABLE "weekly_reviews" ADD COLUMN IF NOT EXISTS "completed_at" timestamp;
+
+-- flow_signals
+ALTER TABLE "flow_signals" ADD COLUMN IF NOT EXISTS "ticker" varchar(10);
+ALTER TABLE "flow_signals" ADD COLUMN IF NOT EXISTS "structure" varchar(100);
+ALTER TABLE "flow_signals" ADD COLUMN IF NOT EXISTS "direction" varchar(20);
+ALTER TABLE "flow_signals" ADD COLUMN IF NOT EXISTS "premium_size" numeric(14, 2);
+ALTER TABLE "flow_signals" ADD COLUMN IF NOT EXISTS "sweep_block" varchar(10);
+ALTER TABLE "flow_signals" ADD COLUMN IF NOT EXISTS "confidence" numeric(5, 4);
+ALTER TABLE "flow_signals" ADD COLUMN IF NOT EXISTS "volume" integer;
+ALTER TABLE "flow_signals" ADD COLUMN IF NOT EXISTS "open_interest" integer;
+ALTER TABLE "flow_signals" ADD COLUMN IF NOT EXISTS "metadata" jsonb;
+ALTER TABLE "flow_signals" ADD COLUMN IF NOT EXISTS "signal_ts" timestamp;
+ALTER TABLE "flow_signals" ADD COLUMN IF NOT EXISTS "created_at" timestamp;
+
+-- flow_filters
+ALTER TABLE "flow_filters" ADD COLUMN IF NOT EXISTS "workspace_id" uuid;
+ALTER TABLE "flow_filters" ADD COLUMN IF NOT EXISTS "user_id" uuid;
+ALTER TABLE "flow_filters" ADD COLUMN IF NOT EXISTS "name" varchar(100);
+ALTER TABLE "flow_filters" ADD COLUMN IF NOT EXISTS "criteria" jsonb;
+ALTER TABLE "flow_filters" ADD COLUMN IF NOT EXISTS "created_at" timestamp;
+
+-- ai_artifacts
+ALTER TABLE "ai_artifacts" ADD COLUMN IF NOT EXISTS "workspace_id" uuid;
+ALTER TABLE "ai_artifacts" ADD COLUMN IF NOT EXISTS "subject_type" varchar(50);
+ALTER TABLE "ai_artifacts" ADD COLUMN IF NOT EXISTS "subject_id" uuid;
+ALTER TABLE "ai_artifacts" ADD COLUMN IF NOT EXISTS "kind" varchar(50);
+ALTER TABLE "ai_artifacts" ADD COLUMN IF NOT EXISTS "content" text;
+ALTER TABLE "ai_artifacts" ADD COLUMN IF NOT EXISTS "tokens_used" integer;
+ALTER TABLE "ai_artifacts" ADD COLUMN IF NOT EXISTS "created_at" timestamp;
+
+-- import_batches
+ALTER TABLE "import_batches" ADD COLUMN IF NOT EXISTS "workspace_id" uuid;
+ALTER TABLE "import_batches" ADD COLUMN IF NOT EXISTS "user_id" uuid;
+ALTER TABLE "import_batches" ADD COLUMN IF NOT EXISTS "broker" varchar(50);
+ALTER TABLE "import_batches" ADD COLUMN IF NOT EXISTS "row_count" integer;
+ALTER TABLE "import_batches" ADD COLUMN IF NOT EXISTS "matched_count" integer;
+ALTER TABLE "import_batches" ADD COLUMN IF NOT EXISTS "error_count" integer;
+ALTER TABLE "import_batches" ADD COLUMN IF NOT EXISTS "status" text;
+ALTER TABLE "import_batches" ADD COLUMN IF NOT EXISTS "preview_data" jsonb;
+ALTER TABLE "import_batches" ADD COLUMN IF NOT EXISTS "created_at" timestamp;
+ALTER TABLE "import_batches" ADD COLUMN IF NOT EXISTS "committed_at" timestamp;
 
 -- ─── Foreign Keys ─────────────────────────────────────────────────────────────
 -- WHEN OTHERS catches both duplicate_object (42710) and undefined_column (42703)
@@ -318,31 +468,33 @@ EXCEPTION WHEN OTHERS THEN NULL; END $$;
 -- ORDER BY 1;
 
 -- ─── Indexes ──────────────────────────────────────────────────────────────────
+-- All wrapped in DO/WHEN OTHERS so a missing column from partial state
+-- can never stop the script.
 
-CREATE INDEX IF NOT EXISTS "ai_artifacts_workspace_idx" ON "ai_artifacts" ("workspace_id");
-CREATE INDEX IF NOT EXISTS "ai_artifacts_subject_idx" ON "ai_artifacts" ("subject_type", "subject_id");
-CREATE INDEX IF NOT EXISTS "broker_accounts_workspace_idx" ON "broker_accounts" ("workspace_id");
-CREATE INDEX IF NOT EXISTS "checklist_items_template_idx" ON "checklist_items" ("template_id");
-CREATE UNIQUE INDEX IF NOT EXISTS "unique_checklist_response" ON "checklist_responses" ("position_id", "item_id");
-CREATE INDEX IF NOT EXISTS "checklist_templates_workspace_idx" ON "checklist_templates" ("workspace_id");
-CREATE INDEX IF NOT EXISTS "flow_filters_workspace_idx" ON "flow_filters" ("workspace_id");
-CREATE INDEX IF NOT EXISTS "flow_signals_ticker_idx" ON "flow_signals" ("ticker");
-CREATE INDEX IF NOT EXISTS "flow_signals_ts_idx" ON "flow_signals" ("signal_ts");
-CREATE INDEX IF NOT EXISTS "import_batches_workspace_idx" ON "import_batches" ("workspace_id");
-CREATE UNIQUE INDEX IF NOT EXISTS "unique_mistake" ON "mistakes" ("workspace_id", "label");
-CREATE INDEX IF NOT EXISTS "position_adjustments_position_idx" ON "position_adjustments" ("position_id");
-CREATE INDEX IF NOT EXISTS "position_legs_position_idx" ON "position_legs" ("position_id");
-CREATE UNIQUE INDEX IF NOT EXISTS "position_tags_pk" ON "position_tags" ("position_id", "tag_id");
-CREATE INDEX IF NOT EXISTS "positions_workspace_idx" ON "positions" ("workspace_id");
-CREATE INDEX IF NOT EXISTS "positions_user_idx" ON "positions" ("user_id");
-CREATE INDEX IF NOT EXISTS "positions_status_idx" ON "positions" ("status");
-CREATE INDEX IF NOT EXISTS "positions_symbol_idx" ON "positions" ("symbol");
-CREATE UNIQUE INDEX IF NOT EXISTS "review_mistakes_pk" ON "review_mistakes" ("review_id", "mistake_id");
-CREATE UNIQUE INDEX IF NOT EXISTS "unique_tag" ON "tags" ("workspace_id", "name");
-CREATE INDEX IF NOT EXISTS "trade_reviews_position_idx" ON "trade_reviews" ("position_id");
-CREATE INDEX IF NOT EXISTS "trade_reviews_workspace_idx" ON "trade_reviews" ("workspace_id");
-CREATE UNIQUE INDEX IF NOT EXISTS "unique_weekly_review" ON "weekly_reviews" ("user_id", "week_key");
-CREATE INDEX IF NOT EXISTS "weekly_reviews_workspace_idx" ON "weekly_reviews" ("workspace_id");
-CREATE UNIQUE INDEX IF NOT EXISTS "unique_workspace_member" ON "workspace_members" ("workspace_id", "user_id");
-CREATE INDEX IF NOT EXISTS "workspace_members_workspace_idx" ON "workspace_members" ("workspace_id");
-CREATE INDEX IF NOT EXISTS "workspace_members_user_idx" ON "workspace_members" ("user_id");
+DO $$ BEGIN CREATE INDEX "ai_artifacts_workspace_idx" ON "ai_artifacts" ("workspace_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "ai_artifacts_subject_idx" ON "ai_artifacts" ("subject_type", "subject_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "broker_accounts_workspace_idx" ON "broker_accounts" ("workspace_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "checklist_items_template_idx" ON "checklist_items" ("template_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE UNIQUE INDEX "unique_checklist_response" ON "checklist_responses" ("position_id", "item_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "checklist_templates_workspace_idx" ON "checklist_templates" ("workspace_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "flow_filters_workspace_idx" ON "flow_filters" ("workspace_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "flow_signals_ticker_idx" ON "flow_signals" ("ticker"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "flow_signals_ts_idx" ON "flow_signals" ("signal_ts"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "import_batches_workspace_idx" ON "import_batches" ("workspace_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE UNIQUE INDEX "unique_mistake" ON "mistakes" ("workspace_id", "label"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "position_adjustments_position_idx" ON "position_adjustments" ("position_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "position_legs_position_idx" ON "position_legs" ("position_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE UNIQUE INDEX "position_tags_pk" ON "position_tags" ("position_id", "tag_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "positions_workspace_idx" ON "positions" ("workspace_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "positions_user_idx" ON "positions" ("user_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "positions_status_idx" ON "positions" ("status"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "positions_symbol_idx" ON "positions" ("symbol"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE UNIQUE INDEX "review_mistakes_pk" ON "review_mistakes" ("review_id", "mistake_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE UNIQUE INDEX "unique_tag" ON "tags" ("workspace_id", "name"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "trade_reviews_position_idx" ON "trade_reviews" ("position_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "trade_reviews_workspace_idx" ON "trade_reviews" ("workspace_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE UNIQUE INDEX "unique_weekly_review" ON "weekly_reviews" ("user_id", "week_key"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "weekly_reviews_workspace_idx" ON "weekly_reviews" ("workspace_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE UNIQUE INDEX "unique_workspace_member" ON "workspace_members" ("workspace_id", "user_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "workspace_members_workspace_idx" ON "workspace_members" ("workspace_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN CREATE INDEX "workspace_members_user_idx" ON "workspace_members" ("user_id"); EXCEPTION WHEN OTHERS THEN NULL; END $$;

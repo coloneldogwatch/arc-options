@@ -54,7 +54,9 @@ export async function signup(formData: FormData): Promise<{ error: string } | { 
       ]);
     });
   } catch (e) {
-    return { error: "Failed to create workspace. Please try again." };
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[signup] workspace creation failed:", msg);
+    return { error: msg };
   }
 
   return { success: true };

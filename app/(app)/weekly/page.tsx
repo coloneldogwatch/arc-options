@@ -1,16 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import MetricCard from "@/components/ui/MetricCard";
+import { completeWeeklyReview } from "@/lib/actions/reviews";
 
 export default function WeeklyPage() {
   const [went, setWent] = useState("");
   const [slipped, setSlipped] = useState("");
   const [change, setChange] = useState("");
+  const [done, setDone] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const filled = went.trim() && slipped.trim() && change.trim();
+
+  function handleSubmit() {
+    if (!filled) return;
+    startTransition(async () => {
+      await completeWeeklyReview({ whatWentWell: went, processSlips: slipped, oneChange: change });
+      setDone(true);
+    });
+  }
+
+  if (done) {
+    return (
+      <div className="p-[26px] flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="text-[32px] mb-2">✓</div>
+          <div className="font-display font-medium text-[17px]">Week complete</div>
+          <div className="text-[13px] text-text-2 mt-1">Streak extended. See you next week.</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-[26px]">
@@ -58,9 +81,10 @@ export default function WeeklyPage() {
         <Button
           variant="primary"
           className="w-full mt-[18px] py-3"
-          disabled={!filled}
+          disabled={!filled || isPending}
+          onClick={handleSubmit}
         >
-          Complete week 5 · extend streak →
+          {isPending ? "Saving…" : "Complete week · extend streak →"}
         </Button>
       </Card>
     </div>

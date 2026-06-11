@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import SegmentControl from "@/components/ui/SegmentControl";
+import { saveReview } from "@/lib/actions/reviews";
 
 const MISTAKE_TAGS = [
   "Exited too early",
@@ -16,8 +17,17 @@ const MISTAKE_TAGS = [
 
 const RATINGS = ["1", "2", "3", "4", "5"] as const;
 
-function RatingRow({ label, note }: { label: string; note?: string }) {
-  const [val, setVal] = useState("4");
+function RatingRow({
+  label,
+  note,
+  value,
+  onChange,
+}: {
+  label: string;
+  note?: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
   return (
     <div>
       <div className="text-xs text-text-2 mb-1.5">
@@ -25,24 +35,49 @@ function RatingRow({ label, note }: { label: string; note?: string }) {
       </div>
       <SegmentControl
         options={RATINGS.map((r) => ({ value: r, label: r }))}
-        value={val}
-        onChange={setVal}
+        value={value}
+        onChange={onChange}
       />
     </div>
   );
 }
+
+// Demo position ID — in production this comes from the URL / props
+const DEMO_POSITION_ID = "00000000-0000-0000-0000-000000000000";
 
 export default function ReviewPage() {
   const [selectedTags, setSelectedTags] = useState(new Set(["Exited too early"]));
   const [lesson, setLesson] = useState(
     "Took profit at 50% but the thesis had room — exited too early out of fear of giving back gains. Next time hold to my planned target."
   );
+  const [thesisAccuracy, setThesisAccuracy] = useState("4");
+  const [entryQuality, setEntryQuality] = useState("4");
+  const [exitQuality, setExitQuality] = useState("4");
+  const [positionSizing, setPositionSizing] = useState("4");
+  const [saved, setSaved] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   function toggleTag(t: string) {
     setSelectedTags((prev) => {
       const next = new Set(prev);
       if (next.has(t)) { next.delete(t); } else { next.add(t); }
       return next;
+    });
+  }
+
+  function handleSave() {
+    if (!lesson.trim()) return;
+    startTransition(async () => {
+      await saveReview({
+        positionId: DEMO_POSITION_ID,
+        thesisAccuracy: Number(thesisAccuracy),
+        entryQuality: Number(entryQuality),
+        exitQuality: Number(exitQuality),
+        positionSizing: Number(positionSizing),
+        lessonLearned: lesson,
+        mistakeLabels: Array.from(selectedTags),
+      });
+      setSaved(true);
     });
   }
 
@@ -75,10 +110,10 @@ export default function ReviewPage() {
       <Card className="mb-4">
         <div className="font-display font-medium text-[15px] mb-[18px]">Rate your process</div>
         <div className="grid gap-4">
-          <RatingRow label="Thesis accuracy" note="(vs. what actually happened)" />
-          <RatingRow label="Entry quality" />
-          <RatingRow label="Exit & management" />
-          <RatingRow label="Position sizing" />
+          <RatingRow label="Thesis accuracy" note="(vs. what actually happened)" value={thesisAccuracy} onChange={setThesisAccuracy} />
+          <RatingRow label="Entry quality" value={entryQuality} onChange={setEntryQuality} />
+          <RatingRow label="Exit & management" value={exitQuality} onChange={setExitQuality} />
+          <RatingRow label="Position sizing" value={positionSizing} onChange={setPositionSizing} />
         </div>
       </Card>
 
@@ -111,8 +146,13 @@ export default function ReviewPage() {
         </div>
 
         <div className="flex justify-end mt-[18px]">
-          <Button variant="primary" className="px-5 py-2.5" disabled={lesson.trim().length === 0}>
-            Save review
+          <Button
+            variant="primary"
+            className="px-5 py-2.5"
+            disabled={!lesson.trim() || isPending || saved}
+            onClick={handleSave}
+          >
+            {saved ? "Saved ✓" : isPending ? "Saving…" : "Save review"}
           </Button>
         </div>
       </Card>

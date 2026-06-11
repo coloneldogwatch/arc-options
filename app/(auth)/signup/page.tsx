@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { IconChartArcs } from "@tabler/icons-react";
-import { login } from "@/lib/actions/auth";
+import { signup } from "@/lib/actions/auth";
 
-export default function LoginPage({
+export default function SignupPage({
   searchParams,
 }: {
-  searchParams: { error?: string; redirectTo?: string };
+  searchParams: { error?: string };
 }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg">
@@ -18,8 +18,8 @@ export default function LoginPage({
         </div>
 
         <div className="bg-surface border border-border/10 rounded-lg p-6">
-          <h1 className="text-[20px] font-display font-medium mb-1">Welcome back</h1>
-          <p className="text-[13px] text-text-2 mb-6">Sign in to your workspace.</p>
+          <h1 className="text-[20px] font-display font-medium mb-1">Create your workspace</h1>
+          <p className="text-[13px] text-text-2 mb-6">Start trading with discipline.</p>
 
           {searchParams.error && (
             <div className="text-neg text-[12.5px] mb-4 bg-neg-soft rounded px-3 py-2">
@@ -27,31 +27,44 @@ export default function LoginPage({
             </div>
           )}
 
-          <form action={login} className="grid gap-4">
-            {searchParams.redirectTo && (
-              <input type="hidden" name="redirectTo" value={searchParams.redirectTo} />
-            )}
+          <form action={signup} className="grid gap-4">
+            <div>
+              <div className="text-xs text-text-2 mb-1.5">Workspace name</div>
+              <input
+                name="name"
+                type="text"
+                placeholder="My trading workspace"
+                autoComplete="organization"
+              />
+            </div>
             <div>
               <div className="text-xs text-text-2 mb-1.5">Email</div>
               <input name="email" type="email" placeholder="you@example.com" required autoComplete="email" />
             </div>
             <div>
               <div className="text-xs text-text-2 mb-1.5">Password</div>
-              <input name="password" type="password" placeholder="••••••••" required autoComplete="current-password" />
+              <input
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                required
+                minLength={8}
+                autoComplete="new-password"
+              />
             </div>
 
             <button
               type="submit"
               className="w-full mt-1 bg-accent text-white border-transparent rounded py-[9px] text-[13px] font-medium hover:brightness-110 transition-all"
             >
-              Sign in
+              Create account
             </button>
           </form>
 
           <div className="text-center mt-4 text-[12.5px] text-text-2">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-accent hover:underline">
-              Sign up free
+            Already have an account?{" "}
+            <Link href="/login" className="text-accent hover:underline">
+              Sign in
             </Link>
           </div>
         </div>

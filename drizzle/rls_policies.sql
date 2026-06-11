@@ -1,10 +1,19 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- Row-Level Security for Arc Options
--- Run this AFTER the schema migration (0000_early_fixer.sql)
+-- Row-Level Security for Arc Options  (idempotent — safe to re-run)
+-- Run this AFTER the schema migration (0000_schema_idempotent.sql)
 -- ─────────────────────────────────────────────────────────────────────────────
 
+-- Drop all policies first so re-runs don't hit "policy already exists" errors.
+-- ENABLE ROW LEVEL SECURITY is idempotent by itself.
+DO $$ DECLARE r record;
+BEGIN
+  FOR r IN SELECT policyname, tablename FROM pg_policies WHERE schemaname = 'public' LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON %I', r.policyname, r.tablename);
+  END LOOP;
+END $$;
+
 -- Helper: returns the workspace IDs that belong to the current user.
--- Defined once so every policy can reference it cheaply.
+-- CREATE OR REPLACE is idempotent.
 CREATE OR REPLACE FUNCTION public.user_workspace_ids()
 RETURNS SETOF uuid
 LANGUAGE sql STABLE SECURITY DEFINER
@@ -23,7 +32,7 @@ CREATE POLICY "workspace_update" ON workspaces
   FOR UPDATE USING (
     id IN (
       SELECT workspace_id FROM workspace_members
-      WHERE user_id = auth.uid() AND role IN ('owner', 'admin')
+      WHERE user_id = auth.uid() AND role::text IN ('owner', 'admin')
     )
   );
 
@@ -37,7 +46,7 @@ CREATE POLICY "member_insert_owner" ON workspace_members
   FOR INSERT WITH CHECK (
     workspace_id IN (
       SELECT workspace_id FROM workspace_members
-      WHERE user_id = auth.uid() AND role = 'owner'
+      WHERE user_id = auth.uid() AND role::text = 'owner'
     )
   );
 
@@ -153,7 +162,7 @@ CREATE POLICY "weekly_reviews_all" ON weekly_reviews
 ALTER TABLE flow_signals ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "flow_signals_read" ON flow_signals
-  FOR SELECT USING (auth.role() = 'authenticated');
+  FOR SELECT USING (auth.role()::text = 'authenticated');
 
 -- ─── flow_filters ────────────────────────────────────────────────────────────
 ALTER TABLE flow_filters ENABLE ROW LEVEL SECURITY;

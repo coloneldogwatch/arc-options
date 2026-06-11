@@ -1,20 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
+import { closePosition } from "@/lib/actions/positions";
 
 type Props = {
+  positionId: string;
   positionLabel: string;
   entryCredit: number;
 };
 
-export default function ClosePositionModal({ positionLabel, entryCredit }: Props) {
+export default function ClosePositionModal({ positionId, positionLabel, entryCredit }: Props) {
   const [open, setOpen] = useState(false);
   const [debit, setDebit] = useState("0.20");
   const [lesson, setLesson] = useState("");
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const pnl = (entryCredit - parseFloat(debit || "0")) * 100;
-  const canSave = lesson.trim().length > 0;
+  const canSave = lesson.trim().length > 0 && !isPending;
 
   if (!open) {
     return (
@@ -27,10 +32,20 @@ export default function ClosePositionModal({ positionLabel, entryCredit }: Props
     );
   }
 
+  function handleSave() {
+    startTransition(async () => {
+      await closePosition({ positionId, closingDebit: parseFloat(debit || "0") });
+      setOpen(false);
+      router.push(
+        `/review?positionId=${positionId}&lesson=${encodeURIComponent(lesson.trim())}`
+      );
+    });
+  }
+
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-5"
-      onClick={(e) => e.target === e.currentTarget && setOpen(false)}
+      onClick={(e) => e.target === e.currentTarget && !isPending && setOpen(false)}
     >
       <div className="bg-surface border border-border/10 rounded-lg w-full max-w-[460px] p-6">
         <div className="font-display font-medium text-[15px] mb-1">Close position</div>
@@ -48,6 +63,7 @@ export default function ClosePositionModal({ positionLabel, entryCredit }: Props
               type="number"
               step="0.01"
               min="0"
+              disabled={isPending}
             />
           </div>
           <div className="flex-1">
@@ -71,22 +87,20 @@ export default function ClosePositionModal({ positionLabel, entryCredit }: Props
           value={lesson}
           onChange={(e) => setLesson(e.target.value)}
           placeholder="What did this trade teach you? (You can't skip this — it's the whole point.)"
+          disabled={isPending}
         />
 
         <div className="flex gap-2.5 mt-[18px]">
-          <Button className="flex-1" onClick={() => setOpen(false)}>
+          <Button className="flex-1" onClick={() => !isPending && setOpen(false)}>
             Cancel
           </Button>
           <Button
             variant="primary"
             className="flex-[1.4]"
             disabled={!canSave}
-            onClick={() => {
-              setOpen(false);
-              // TODO: call server action
-            }}
+            onClick={handleSave}
           >
-            Save & review →
+            {isPending ? "Saving…" : "Save & review →"}
           </Button>
         </div>
       </div>

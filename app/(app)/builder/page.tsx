@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import SegmentControl from "@/components/ui/SegmentControl";
@@ -12,10 +13,14 @@ import StatsRow from "@/components/builder/StatsRow";
 import PnlMatrix from "@/components/builder/PnlMatrix";
 import PnlChart from "@/components/builder/PnlChart";
 import LegsList from "@/components/builder/LegsList";
+import { strategyStats } from "@/lib/math/blackScholes";
+import { createPosition } from "@/lib/actions/positions";
 
 function BuilderInner() {
   const { state, dispatch } = useBuilder();
   const [thesis, setThesis] = useState("");
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   return (
     <div className="p-[26px]">
@@ -41,7 +46,29 @@ function BuilderInner() {
           <Link href="/checklist">
             <Button>Run checklist</Button>
           </Link>
-          <Button variant="primary">Save & log →</Button>
+          <Button
+              variant="primary"
+              disabled={isPending}
+              onClick={() => {
+                const expiry = new Date();
+                expiry.setDate(expiry.getDate() + Math.round(state.dte));
+                const expirationDate = expiry.toISOString().split("T")[0];
+                const stats = strategyStats(state.legs, state.spot, state.ivPct / 100, state.dte);
+                startTransition(async () => {
+                  const { positionId } = await createPosition({
+                    symbol: state.symbol,
+                    strategyName: "Bull put spread",
+                    legs: state.legs,
+                    entryThesis: thesis.trim() || undefined,
+                    entryCredit: Math.max(0, stats.netCredit / 100),
+                    expirationDate,
+                  });
+                  router.push(`/checklist?positionId=${positionId}`);
+                });
+              }}
+            >
+              {isPending ? "Saving…" : "Save & log →"}
+            </Button>
         </div>
       </div>
 
@@ -144,9 +171,26 @@ function BuilderInner() {
           <Button
             variant="primary"
             className="w-full mt-3"
-            disabled={thesis.trim().length === 0}
+            disabled={thesis.trim().length === 0 || isPending}
+            onClick={() => {
+              const expiry = new Date();
+              expiry.setDate(expiry.getDate() + Math.round(state.dte));
+              const expirationDate = expiry.toISOString().split("T")[0];
+              const stats = strategyStats(state.legs, state.spot, state.ivPct / 100, state.dte);
+              startTransition(async () => {
+                const { positionId } = await createPosition({
+                  symbol: state.symbol,
+                  strategyName: "Bull put spread",
+                  legs: state.legs,
+                  entryThesis: thesis.trim(),
+                  entryCredit: Math.max(0, stats.netCredit / 100),
+                  expirationDate,
+                });
+                router.push(`/checklist?positionId=${positionId}`);
+              });
+            }}
           >
-            Log position with thesis →
+            {isPending ? "Saving…" : "Log position with thesis →"}
           </Button>
         </div>
       </div>

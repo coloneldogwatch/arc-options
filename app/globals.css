@@ -1,0 +1,101 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #FAFAF8;
+  --surface: #FFFFFF;
+  --surface-2: #F4F4F1;
+  --border: rgba(22, 22, 30, 0.10);
+  --border-strong: rgba(22, 22, 30, 0.18);
+  --text: #1A1A22;
+  --text-2: #67676F;
+  --text-3: #9A9AA3;
+  --accent: #5B5BD6;
+  --accent-soft: #ECECFB;
+  --pos: #16886B;
+  --pos-soft: #E4F3EC;
+  --neg: #C0392B;
+  --neg-soft: #FBE9E7;
+  --warn: #9A6300;
+  --warn-soft: #FBF0DC;
+  --r: 8px;
+  --r-lg: 12px;
+}
+
+[data-theme="dark"] {
+  --bg: #15151A;
+  --surface: #1E1E25;
+  --surface-2: #26262F;
+  --border: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.20);
+  --text: #ECECF0;
+  --text-2: #A0A0AC;
+  --text-3: #6E6E78;
+  --accent: #9090F2;
+  --accent-soft: rgba(144, 144, 242, 0.16);
+  --pos: #4FD1A5;
+  --pos-soft: rgba(79, 209, 165, 0.14);
+  --neg: #F0817A;
+  --neg-soft: rgba(240, 129, 122, 0.14);
+  --warn: #E0A53A;
+  --warn-soft: rgba(224, 165, 58, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--r);
+  padding: 7px 10px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease;
+}

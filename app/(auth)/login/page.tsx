@@ -1,12 +1,33 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { IconChartArcs } from "@tabler/icons-react";
 import { login } from "@/lib/actions/auth";
 
-export default function LoginPage({
-  searchParams,
-}: {
-  searchParams: { error?: string; redirectTo?: string };
-}) {
+export default function LoginPage() {
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    const formData = new FormData(e.currentTarget);
+    startTransition(async () => {
+      const result = await login(formData);
+      if ("error" in result) {
+        setError(result.error);
+      } else {
+        const redirectTo = searchParams.get("redirectTo") ?? "/dashboard";
+        router.push(redirectTo.startsWith("/") ? redirectTo : "/dashboard");
+        router.refresh();
+      }
+    });
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg">
       <div className="w-full max-w-sm">
@@ -21,16 +42,13 @@ export default function LoginPage({
           <h1 className="text-[20px] font-display font-medium mb-1">Welcome back</h1>
           <p className="text-[13px] text-text-2 mb-6">Sign in to your workspace.</p>
 
-          {searchParams.error && (
+          {error && (
             <div className="text-neg text-[12.5px] mb-4 bg-neg-soft rounded px-3 py-2">
-              {decodeURIComponent(searchParams.error)}
+              {error}
             </div>
           )}
 
-          <form action={login} className="grid gap-4">
-            {searchParams.redirectTo && (
-              <input type="hidden" name="redirectTo" value={searchParams.redirectTo} />
-            )}
+          <form onSubmit={handleSubmit} className="grid gap-4">
             <div>
               <div className="text-xs text-text-2 mb-1.5">Email</div>
               <input name="email" type="email" placeholder="you@example.com" required autoComplete="email" />
@@ -42,9 +60,10 @@ export default function LoginPage({
 
             <button
               type="submit"
-              className="w-full mt-1 bg-accent text-white border-transparent rounded py-[9px] text-[13px] font-medium hover:brightness-110 transition-all"
+              disabled={isPending}
+              className="w-full mt-1 bg-accent text-white border-transparent rounded py-[9px] text-[13px] font-medium hover:brightness-110 transition-all disabled:opacity-60"
             >
-              Sign in
+              {isPending ? "Signing in…" : "Sign in"}
             </button>
           </form>
 

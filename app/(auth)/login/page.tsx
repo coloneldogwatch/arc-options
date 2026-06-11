@@ -22,8 +22,7 @@ export default function LoginPage() {
         setError(result.error);
       } else {
         const redirectTo = searchParams.get("redirectTo") ?? "/dashboard";
-        router.push(redirectTo.startsWith("/") ? redirectTo : "/dashboard");
-        router.refresh();
+        window.location.href = redirectTo.startsWith("/") ? redirectTo : "/dashboard";
       }
     });
   }

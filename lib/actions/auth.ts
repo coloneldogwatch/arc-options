@@ -6,6 +6,29 @@ import { db } from "@/lib/db";
 import { workspaces, workspaceMembers, checklistTemplates, checklistItems } from "@/lib/db/schema";
 import { DEFAULT_CHECKLIST } from "@/types";
 
+function serializeError(e: any): string {
+  const seen = new WeakSet();
+  return JSON.stringify(e, function (_, v) {
+    if (typeof v === "object" && v !== null) {
+      if (seen.has(v)) return "[Circular]";
+      seen.add(v);
+      // Capture non-enumerable own properties (e.g. Error fields)
+      if (v instanceof Error || typeof v.message === "string") {
+        const out: Record<string, unknown> = {};
+        for (const k of Object.getOwnPropertyNames(v)) out[k] = (v as any)[k];
+        return out;
+      }
+    }
+    return v;
+  }, 2);
+}
+
+function rootCause(e: any): any {
+  let curr = e;
+  while (curr?.cause) curr = curr.cause;
+  return curr;
+}
+
 export async function signup(formData: FormData): Promise<{ error: string } | { success: true }> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
@@ -19,43 +42,50 @@ export async function signup(formData: FormData): Promise<{ error: string } | { 
 
   const userId = data.user!.id;
   const workspaceName = name || email.split("@")[0];
-  const slug = workspaceName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || userId.slice(0, 8);
+  const slug =
+    workspaceName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") ||
+    userId.slice(0, 8);
 
   try {
-    const [workspace] = await db
-      .insert(workspaces)
-      .values({ name: workspaceName, slug })
-      .returning();
+    await db.transaction(async (tx) => {
+      const [workspace] = await tx
+        .insert(workspaces)
+        .values({ name: workspaceName, slug })
+        .returning();
 
-    await db.insert(workspaceMembers).values({
-      workspaceId: workspace.id,
-      userId,
-      role: "owner",
+      await tx.insert(workspaceMembers).values({
+        workspaceId: workspace.id,
+        userId,
+        role: "owner",
+      });
+
+      const [template] = await tx
+        .insert(checklistTemplates)
+        .values({ workspaceId: workspace.id, name: "Default", isDefault: true })
+        .returning();
+
+      await tx.insert(checklistItems).values([
+        ...DEFAULT_CHECKLIST.required.map((label, i) => ({
+          templateId: template.id,
+          label,
+          required: true,
+          sortOrder: i,
+        })),
+        ...DEFAULT_CHECKLIST.optional.map((label, i) => ({
+          templateId: template.id,
+          label,
+          required: false,
+          sortOrder: DEFAULT_CHECKLIST.required.length + i,
+        })),
+      ]);
     });
-
-    const [template] = await db
-      .insert(checklistTemplates)
-      .values({ workspaceId: workspace.id, name: "Default", isDefault: true })
-      .returning();
-
-    await db.insert(checklistItems).values([
-      ...DEFAULT_CHECKLIST.required.map((label, i) => ({
-        templateId: template.id,
-        label,
-        required: true,
-        sortOrder: i,
-      })),
-      ...DEFAULT_CHECKLIST.optional.map((label, i) => ({
-        templateId: template.id,
-        label,
-        required: false,
-        sortOrder: DEFAULT_CHECKLIST.required.length + i,
-      })),
-    ]);
   } catch (e: any) {
-    const errInfo = JSON.stringify(e, Object.getOwnPropertyNames(e));
-    console.error("[signup] workspace creation failed:", errInfo);
-    return { error: `${e?.code ?? "?"}: ${e?.message ?? String(e)}` };
+    const root = rootCause(e);
+    console.error("[signup] workspace setup failed:", serializeError(e));
+    const code = root?.code ?? e?.code ?? "?";
+    const msg = root?.message ?? e?.message ?? String(e);
+    const detail = root?.detail ? ` (${root.detail})` : "";
+    return { error: `${code}: ${msg}${detail}` };
   }
 
   return { success: true };

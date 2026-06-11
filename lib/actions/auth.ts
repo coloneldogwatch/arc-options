@@ -53,10 +53,15 @@ export async function signup(formData: FormData): Promise<{ error: string } | { 
         })),
       ]);
     });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("[signup] workspace creation failed:", msg);
-    return { error: msg };
+  } catch (e: any) {
+    const details = {
+      message: e?.message,
+      code: e?.code,
+      detail: e?.detail,
+      table: e?.table,
+    };
+    console.error("[signup] workspace creation failed:", JSON.stringify(details, null, 2));
+    return { error: `${e?.code ?? "?"}: ${e?.message ?? String(e)}` };
   }
 
   return { success: true };

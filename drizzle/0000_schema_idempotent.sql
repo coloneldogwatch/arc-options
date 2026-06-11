@@ -225,6 +225,22 @@ CREATE TABLE IF NOT EXISTS "import_batches" (
   "committed_at" timestamp
 );
 
+-- ─── Column patches (safe to re-run if table existed from a partial state) ───
+-- Adds any columns that may be missing when CREATE TABLE IF NOT EXISTS skipped.
+
+ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "broker_account_id" uuid;
+ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "entry_thesis" text;
+ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "checklist_score" integer;
+ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "entry_credit" numeric(10, 4);
+ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "realized_pnl" numeric(10, 2);
+ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "return_on_risk" numeric(8, 4);
+ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "closed_at" timestamp;
+ALTER TABLE "position_legs" ADD COLUMN IF NOT EXISTS "close_price" numeric(10, 4);
+ALTER TABLE "position_legs" ADD COLUMN IF NOT EXISTS "closed_at" timestamp;
+ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "stripe_customer_id" text;
+ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "stripe_subscription_id" text;
+ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "stripe_current_period_end" timestamp;
+
 -- ─── Foreign Keys (idempotent via DO blocks) ──────────────────────────────────
 
 DO $$ BEGIN ALTER TABLE "workspace_members" ADD CONSTRAINT "workspace_members_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "workspaces"("id") ON DELETE CASCADE;

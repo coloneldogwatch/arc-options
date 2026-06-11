@@ -30,7 +30,7 @@ export async function GET() {
   try {
     const [row] = await db
       .insert(workspaces)
-      .values({ name: "__debug_test__" })
+      .values({ name: "__debug_test__", slug: "__debug_test__" })
       .returning({ id: workspaces.id });
     insertedId = row.id;
     await db.delete(workspaces).where(eq(workspaces.id, row.id));

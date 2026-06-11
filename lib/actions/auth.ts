@@ -19,11 +19,12 @@ export async function signup(formData: FormData): Promise<{ error: string } | { 
 
   const userId = data.user!.id;
   const workspaceName = name || email.split("@")[0];
+  const slug = workspaceName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || userId.slice(0, 8);
 
   try {
     const [workspace] = await db
       .insert(workspaces)
-      .values({ name: workspaceName })
+      .values({ name: workspaceName, slug })
       .returning();
 
     await db.insert(workspaceMembers).values({

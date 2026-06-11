@@ -21,46 +21,39 @@ export async function signup(formData: FormData): Promise<{ error: string } | { 
   const workspaceName = name || email.split("@")[0];
 
   try {
-    await db.transaction(async (tx) => {
-      const [workspace] = await tx
-        .insert(workspaces)
-        .values({ name: workspaceName })
-        .returning();
+    const [workspace] = await db
+      .insert(workspaces)
+      .values({ name: workspaceName })
+      .returning();
 
-      await tx.insert(workspaceMembers).values({
-        workspaceId: workspace.id,
-        userId,
-        role: "owner",
-      });
-
-      const [template] = await tx
-        .insert(checklistTemplates)
-        .values({ workspaceId: workspace.id, name: "Default", isDefault: true })
-        .returning();
-
-      await tx.insert(checklistItems).values([
-        ...DEFAULT_CHECKLIST.required.map((label, i) => ({
-          templateId: template.id,
-          label,
-          required: true,
-          sortOrder: i,
-        })),
-        ...DEFAULT_CHECKLIST.optional.map((label, i) => ({
-          templateId: template.id,
-          label,
-          required: false,
-          sortOrder: DEFAULT_CHECKLIST.required.length + i,
-        })),
-      ]);
+    await db.insert(workspaceMembers).values({
+      workspaceId: workspace.id,
+      userId,
+      role: "owner",
     });
+
+    const [template] = await db
+      .insert(checklistTemplates)
+      .values({ workspaceId: workspace.id, name: "Default", isDefault: true })
+      .returning();
+
+    await db.insert(checklistItems).values([
+      ...DEFAULT_CHECKLIST.required.map((label, i) => ({
+        templateId: template.id,
+        label,
+        required: true,
+        sortOrder: i,
+      })),
+      ...DEFAULT_CHECKLIST.optional.map((label, i) => ({
+        templateId: template.id,
+        label,
+        required: false,
+        sortOrder: DEFAULT_CHECKLIST.required.length + i,
+      })),
+    ]);
   } catch (e: any) {
-    const details = {
-      message: e?.message,
-      code: e?.code,
-      detail: e?.detail,
-      table: e?.table,
-    };
-    console.error("[signup] workspace creation failed:", JSON.stringify(details, null, 2));
+    const errInfo = JSON.stringify(e, Object.getOwnPropertyNames(e));
+    console.error("[signup] workspace creation failed:", errInfo);
     return { error: `${e?.code ?? "?"}: ${e?.message ?? String(e)}` };
   }
 

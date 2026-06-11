@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { IconChartArcs } from "@tabler/icons-react";
 import { login } from "@/lib/actions/auth";
@@ -9,8 +8,6 @@ import { login } from "@/lib/actions/auth";
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -21,8 +18,7 @@ export default function LoginPage() {
       if ("error" in result) {
         setError(result.error);
       } else {
-        const redirectTo = searchParams.get("redirectTo") ?? "/dashboard";
-        window.location.href = redirectTo.startsWith("/") ? redirectTo : "/dashboard";
+        window.location.href = "/dashboard";
       }
     });
   }

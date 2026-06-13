@@ -51,7 +51,7 @@ export async function GET() {
       await db.insert(workspaceMembers).values({
         workspaceId: wsInsertedId,
         userId: "00000000-0000-0000-0000-000000000001",
-        role: "owner",
+        role: "OWNER",
       });
       memberInsertOk = true;
     } catch (e: any) { memberInsertError = serializeError(e); }

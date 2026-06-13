@@ -17,7 +17,7 @@ import { relations } from "drizzle-orm";
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
 export const planEnum = pgEnum("plan", ["free", "pro"]);
-export const memberRoleEnum = pgEnum("member_role", ["owner", "admin", "member"]);
+export const memberRoleEnum = pgEnum("workspace_role", ["OWNER", "ADMIN", "MEMBER", "VIEWER"]);
 export const positionStatusEnum = pgEnum("position_status", ["open", "closed"]);
 export const legTypeEnum = pgEnum("leg_type", ["call", "put"]);
 export const legSideEnum = pgEnum("leg_side", ["long", "short"]);
@@ -54,7 +54,7 @@ export const workspaceMembers = pgTable(
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
     userId: uuid("user_id").notNull(), // references auth.users
-    role: memberRoleEnum("role").notNull().default("member"),
+    role: memberRoleEnum("role").notNull().default("MEMBER"),
     joinedAt: timestamp("joined_at").notNull().defaultNow(),
   },
   (t) => ({

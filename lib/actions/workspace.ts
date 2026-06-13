@@ -37,7 +37,7 @@ export async function provisionWorkspace(userId: string, email: string) {
     await tx.insert(workspaceMembers).values({
       workspaceId: workspace.id,
       userId,
-      role: "owner",
+      role: "OWNER",
     });
 
     const [template] = await tx

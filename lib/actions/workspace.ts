@@ -22,23 +22,36 @@ async function getMemberRow(userId: string) {
   return row ?? null;
 }
 
+// Upsert the user into public.users (FK target for workspace_members).
+// Tries (id, email) first; falls back to (id) only if the schema differs.
+// Must run OUTSIDE a transaction — a failed statement inside a tx kills the tx.
+async function ensurePublicUser(userId: string, email: string) {
+  try {
+    await db.execute(sql`
+      INSERT INTO users (id, email)
+      VALUES (${userId}::uuid, ${email})
+      ON CONFLICT (id) DO NOTHING
+    `);
+  } catch {
+    // email column may not exist or have a different name — try id only
+    await db.execute(sql`
+      INSERT INTO users (id)
+      VALUES (${userId}::uuid)
+      ON CONFLICT (id) DO NOTHING
+    `);
+  }
+}
+
 export async function provisionWorkspace(userId: string, email: string) {
   const workspaceName = email.split("@")[0] || userId.slice(0, 8);
   const slug =
     workspaceName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") ||
     userId.slice(0, 8);
 
-  await db.transaction(async (tx) => {
-    // Ensure the user row exists in public.users (FK target for workspace_members).
-    // Supabase templates mirror auth.users → public.users via trigger; if that
-    // trigger didn't fire (e.g. email not confirmed before trigger was added),
-    // we create the row here. ON CONFLICT DO NOTHING is safe for retries.
-    await tx.execute(sql`
-      INSERT INTO users (id, email)
-      VALUES (${userId}::uuid, ${email})
-      ON CONFLICT (id) DO NOTHING
-    `);
+  // Ensure public.users row exists before entering the transaction.
+  await ensurePublicUser(userId, email);
 
+  await db.transaction(async (tx) => {
     const [workspace] = await tx
       .insert(workspaces)
       .values({ name: workspaceName, slug })
@@ -82,8 +95,6 @@ export async function requireWorkspace(): Promise<WorkspaceContext> {
   let row = await getMemberRow(user.id);
 
   if (!row) {
-    // Authenticated but no workspace — provision one on demand.
-    // This handles the case where signup's DB step failed after auth succeeded.
     try {
       await provisionWorkspace(user.id, user.email ?? user.id);
       row = await getMemberRow(user.id);

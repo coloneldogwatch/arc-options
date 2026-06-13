@@ -62,6 +62,18 @@ export async function GET() {
     try { await db.delete(workspaces).where(eq(workspaces.id, wsInsertedId)); } catch {}
   }
 
+  // Test 5: what values does the workspace_role enum actually have?
+  let workspaceRoleValues: string[] = [];
+  let workspaceRoleError = "";
+  try {
+    const rows = await db.execute(sql`
+      SELECT enumlabel::text FROM pg_enum
+      WHERE enumtypid = 'workspace_role'::regtype
+      ORDER BY enumsortorder
+    `);
+    workspaceRoleValues = (rows as any[]).map((r: any) => r.enumlabel);
+  } catch (e: any) { workspaceRoleError = String(e); }
+
   // Show which DB URL is active (mask password)
   const dbUrl = (process.env.DATABASE_URL_DIRECT ?? process.env.DATABASE_URL ?? "").replace(/:([^@]+)@/, ":***@");
 
@@ -71,5 +83,6 @@ export async function GET() {
     tableExists, tableError,
     wsInsertOk, wsInsertError, wsInsertedId,
     memberInsertOk, memberInsertError,
+    workspaceRoleValues, workspaceRoleError,
   });
 }

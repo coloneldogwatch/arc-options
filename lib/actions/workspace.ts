@@ -70,12 +70,14 @@ export async function provisionWorkspace(userId: string, email: string) {
 
     await tx.insert(checklistItems).values([
       ...DEFAULT_CHECKLIST.required.map((label, i) => ({
+        workspaceId: workspace.id,
         templateId: template.id,
         label,
         required: true,
         sortOrder: i,
       })),
       ...DEFAULT_CHECKLIST.optional.map((label, i) => ({
+        workspaceId: workspace.id,
         templateId: template.id,
         label,
         required: false,

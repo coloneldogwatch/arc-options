@@ -81,8 +81,8 @@ export async function GET() {
       steps["checklist_template"] = template.id;
 
       await tx.insert(checklistItems).values([
-        ...DEFAULT_CHECKLIST.required.map((label, i) => ({ templateId: template.id, label, required: true, sortOrder: i })),
-        ...DEFAULT_CHECKLIST.optional.map((label, i) => ({ templateId: template.id, label, required: false, sortOrder: DEFAULT_CHECKLIST.required.length + i })),
+        ...DEFAULT_CHECKLIST.required.map((label, i) => ({ workspaceId: workspace.id, templateId: template.id, label, required: true, sortOrder: i })),
+        ...DEFAULT_CHECKLIST.optional.map((label, i) => ({ workspaceId: workspace.id, templateId: template.id, label, required: false, sortOrder: DEFAULT_CHECKLIST.required.length + i })),
       ]);
       steps["checklist_items"] = "ok";
     });

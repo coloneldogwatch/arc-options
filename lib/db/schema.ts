@@ -214,6 +214,9 @@ export const checklistItems = pgTable(
   "checklist_items",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
     templateId: uuid("template_id")
       .notNull()
       .references(() => checklistTemplates.id, { onDelete: "cascade" }),

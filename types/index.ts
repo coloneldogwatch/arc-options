@@ -1,6 +1,6 @@
 export type Plan = "free" | "pro";
 export type MemberRole = "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
-export type PositionStatus = "open" | "closed";
+export type PositionStatus = "OPEN" | "CLOSED";
 export type LegType = "call" | "put";
 export type LegSide = "long" | "short";
 

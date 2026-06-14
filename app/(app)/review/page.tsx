@@ -18,7 +18,7 @@ export default async function ReviewPage({ searchParams }: Props) {
       where: and(
         eq(positions.id, positionId),
         eq(positions.workspaceId, workspaceId),
-        eq(positions.status, "closed")
+        eq(positions.status, "CLOSED")
       ),
     });
   }

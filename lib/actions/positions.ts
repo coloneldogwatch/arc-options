@@ -66,7 +66,7 @@ export async function closePosition(input: ClosePositionInput) {
   });
 
   if (!position) throw new Error("Position not found");
-  if (position.status === "closed") throw new Error("Already closed");
+  if (position.status === "CLOSED") throw new Error("Already closed");
 
   const entryCredit = parseFloat(String(position.entryCredit ?? "0"));
   const realizedPnl = (entryCredit - input.closingDebit) * 100;
@@ -77,7 +77,7 @@ export async function closePosition(input: ClosePositionInput) {
     await tx
       .update(positions)
       .set({
-        status: "closed",
+        status: "CLOSED",
         realizedPnl: realizedPnl.toFixed(2),
         closedAt: now,
         updatedAt: now,

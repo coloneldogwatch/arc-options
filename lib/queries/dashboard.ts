@@ -20,7 +20,7 @@ export async function getDashboardData(workspaceId: string) {
 
   try {
     openPositions = await db.query.positions.findMany({
-      where: and(eq(positions.workspaceId, workspaceId), eq(positions.status, "open")),
+      where: and(eq(positions.workspaceId, workspaceId), eq(positions.status, "OPEN")),
       orderBy: (p, { desc }) => [desc(p.openedAt)],
       with: { legs: true },
     });
@@ -32,7 +32,7 @@ export async function getDashboardData(workspaceId: string) {
     closedThisMonth = await db.query.positions.findMany({
       where: and(
         eq(positions.workspaceId, workspaceId),
-        eq(positions.status, "closed"),
+        eq(positions.status, "CLOSED"),
         gte(positions.closedAt!, monthStart)
       ),
     });
@@ -53,7 +53,7 @@ export async function getDashboardData(workspaceId: string) {
       .where(
         and(
           eq(positions.workspaceId, workspaceId),
-          eq(positions.status, "closed"),
+          eq(positions.status, "CLOSED"),
           isNull(tradeReviews.id)
         )
       )

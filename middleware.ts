@@ -31,11 +31,6 @@ export async function middleware(request: NextRequest) {
 
   const isPublic = PUBLIC_PATHS.some((p) => request.nextUrl.pathname.startsWith(p));
 
-  // For dev: skip auth gate so UI can be viewed without credentials
-  if (process.env.NODE_ENV === "development") {
-    return response;
-  }
-
   if (!user && !isPublic) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirectTo", request.nextUrl.pathname);

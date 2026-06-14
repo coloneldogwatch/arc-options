@@ -18,7 +18,7 @@ import { relations } from "drizzle-orm";
 
 export const planEnum = pgEnum("plan", ["free", "pro"]);
 export const memberRoleEnum = pgEnum("workspace_role", ["OWNER", "ADMIN", "MEMBER", "VIEWER"]);
-export const positionStatusEnum = pgEnum("position_status", ["open", "closed"]);
+export const positionStatusEnum = pgEnum("position_status", ["OPEN", "CLOSED"]);
 export const legTypeEnum = pgEnum("leg_type", ["call", "put"]);
 export const legSideEnum = pgEnum("leg_side", ["long", "short"]);
 export const adjustmentKindEnum = pgEnum("adjustment_kind", [
@@ -96,7 +96,7 @@ export const positions = pgTable(
     brokerAccountId: uuid("broker_account_id").references(() => brokerAccounts.id),
     symbol: varchar("symbol", { length: 10 }).notNull(),
     strategyName: varchar("strategy_name", { length: 100 }).notNull(),
-    status: positionStatusEnum("status").notNull().default("open"),
+    status: positionStatusEnum("status").notNull().default("OPEN"),
     entryThesis: text("entry_thesis"),
     checklistScore: integer("checklist_score"),
     entryCredit: numeric("entry_credit", { precision: 10, scale: 4 }),
@@ -217,11 +217,15 @@ export const checklistItems = pgTable(
     workspaceId: uuid("workspace_id")
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
-    templateId: uuid("template_id")
+    // checklist_id and text are the original NOT NULL columns in the DB template;
+    // template_id, label, required are nullable aliases added later by migrations.
+    checklistId: uuid("checklist_id")
       .notNull()
       .references(() => checklistTemplates.id, { onDelete: "cascade" }),
-    label: varchar("label", { length: 200 }).notNull(),
-    required: boolean("required").notNull().default(true),
+    text: text("text").notNull(),
+    templateId: uuid("template_id"),
+    label: varchar("label", { length: 200 }),
+    required: boolean("required"),
     sortOrder: integer("sort_order").notNull().default(0),
   },
   (t) => ({

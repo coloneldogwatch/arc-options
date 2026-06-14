@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { checklistItems, checklistTemplates, checklistResponses } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 
 export async function getChecklistData(workspaceId: string, positionId: string) {
   const [template] = await db
@@ -20,8 +20,8 @@ export async function getChecklistData(workspaceId: string, positionId: string) 
     db
       .select({
         id: checklistItems.id,
-        label: checklistItems.label,
-        required: checklistItems.required,
+        label: sql<string>`coalesce(${checklistItems.label}, ${checklistItems.text})`,
+        required: sql<boolean>`coalesce(${checklistItems.required}, false)`,
         sortOrder: checklistItems.sortOrder,
       })
       .from(checklistItems)

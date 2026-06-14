@@ -2,26 +2,46 @@ import { db } from "@/lib/db";
 import { positions, tradeReviews } from "@/lib/db/schema";
 import { eq, and, gte, isNull } from "drizzle-orm";
 
+const EMPTY = {
+  openPositions: [] as any[],
+  needsReview: [] as any[],
+  netPnlMonth: 0,
+  winRate: 0,
+  avgAdherence: 0,
+};
+
 export async function getDashboardData(workspaceId: string) {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [openPositions, closedThisMonth, needsReview] = await Promise.all([
-    db.query.positions.findMany({
+  let openPositions: any[] = [];
+  let closedThisMonth: any[] = [];
+  let needsReview: any[] = [];
+
+  try {
+    openPositions = await db.query.positions.findMany({
       where: and(eq(positions.workspaceId, workspaceId), eq(positions.status, "open")),
       orderBy: (p, { desc }) => [desc(p.openedAt)],
       with: { legs: true },
-    }),
+    });
+  } catch (e) {
+    console.error("[dashboard] openPositions query failed:", e);
+  }
 
-    db.query.positions.findMany({
+  try {
+    closedThisMonth = await db.query.positions.findMany({
       where: and(
         eq(positions.workspaceId, workspaceId),
         eq(positions.status, "closed"),
         gte(positions.closedAt!, monthStart)
       ),
-    }),
+    });
+  } catch (e) {
+    console.error("[dashboard] closedThisMonth query failed:", e);
+  }
 
-    db
+  try {
+    needsReview = await db
       .select({
         id: positions.id,
         symbol: positions.symbol,
@@ -37,8 +57,10 @@ export async function getDashboardData(workspaceId: string) {
           isNull(tradeReviews.id)
         )
       )
-      .limit(5),
-  ]);
+      .limit(5);
+  } catch (e) {
+    console.error("[dashboard] needsReview query failed:", e);
+  }
 
   const netPnlMonth = closedThisMonth.reduce(
     (acc, p) => acc + parseFloat(String(p.realizedPnl ?? "0")),
